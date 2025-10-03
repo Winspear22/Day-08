@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Service\loginService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -10,25 +11,28 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class UserController extends AbstractController
 {
+
+    // Affichage du formulaire login (GET)
+    #[Route('/login', name: 'login_page', methods: ['GET'])]
+    public function loginPage(): Response
+    {
+        return $this->render('user/index.html.twig');
+    }
+
+    // Traitement du login (POST AJAX)
+
+
     #[Route('/login', name: 'login_action', methods: ['POST'])]
-    public function loginAction(Request $request): Response
+    public function loginAction(Request $request, loginService $loginService): Response
     {
         $username = $request->request->get('username');
         $password = $request->request->get('password');
 
-        // Cas où il manque un champ !
-        if (!$username || !$password)
+        if ($loginService->authenticate($username, $password) === true)
         {
-            return new JsonResponse(
-                ['error' => 'Champs manquant'],
-                400 // Bad Request
-            );
+            // Crée la session, etc.
+            return new JsonResponse(['success' => true]);
         }
-
-        // Ici tu mets ta vraie logique de login plus tard (user/pass test)
-        // Pour l’instant, juste un message
-        return new JsonResponse([
-            'message' => "Bienvenue $username !"
-        ]);
+        return new JsonResponse(['error' => 'Erreur, le login est incorrecte.'], 401);
     }
 }

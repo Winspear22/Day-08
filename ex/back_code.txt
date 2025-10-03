@@ -39,21 +39,29 @@ final class PostController extends AbstractController
 
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Service\loginService;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 final class UserController extends AbstractController
 {
-    #[Route('/user', name: 'app_user')]
-    public function index(): Response
+    #[Route('/login', name: 'login_action', methods: ['POST'])]
+    public function loginAction(Request $request, loginService $loginService): Response
     {
-        return $this->render('user/index.html.twig', [
-            'controller_name' => 'UserController',
-        ]);
+    $username = $request->request->get('username');
+    $password = $request->request->get('password');
+
+    if ($loginService->authenticate($username, $password)) 
+    {
+        // Crée la session, etc.
+        return new JsonResponse(['success' => true]);
+    }
+    return new JsonResponse(['error' => 'Login incorrect'], 401);
     }
 }
-
 
 
 ────────────────────────────────────────────
@@ -210,6 +218,29 @@ class PostRepository extends ServiceEntityRepository
     //    }
 }
 
+
+
+────────────────────────────────────────────
+📂 src/Service
+└── 📄 loginService.php
+────────────────────────────────────────────
+<?php 
+
+// src/Service/UserAuthenticator.php
+namespace App\Service;
+
+class loginService
+{
+    public function authenticate($username, $password): bool
+    {
+		if (empty($username) || empty($password))
+            return false;
+		if ($username == "testuser" && $password == "user42")
+			return true;
+		return false;
+    }
+}
+?>
 
 
 ────────────────────────────────────────────
