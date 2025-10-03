@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
+#[ORM\HasLifecycleCallbacks] // Permet à Doctrine d'appeler les méthodes avec annotations PrePersist, PreUpdate etc.
 class Post
 {
     #[ORM\Id]
@@ -20,8 +21,17 @@ class Post
     #[ORM\Column(type: Types::TEXT)]
     private ?string $content = null;
 
-    #[ORM\Column]
+    // Correction : on précise ici le type de colonne pour Doctrine :
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $created = null;
+
+    // Ajout - callback appelé automatiquement avant insertion
+    #[ORM\PrePersist]
+    public function setCreatedValue(): void
+    {
+        // Initialisation automatique à la date du jour à la création de l'objet
+        $this->created = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
@@ -36,7 +46,6 @@ class Post
     public function setTitle(string $title): static
     {
         $this->title = $title;
-
         return $this;
     }
 
@@ -48,19 +57,11 @@ class Post
     public function setContent(string $content): static
     {
         $this->content = $content;
-
         return $this;
     }
 
     public function getCreated(): ?\DateTimeImmutable
     {
         return $this->created;
-    }
-
-    public function setCreated(\DateTimeImmutable $created): static
-    {
-        $this->created = $created;
-
-        return $this;
     }
 }
