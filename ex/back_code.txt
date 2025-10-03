@@ -1,0 +1,270 @@
+
+────────────────────────────────────────────
+📂 src/Controller
+└── 📄 .gitignore
+────────────────────────────────────────────
+
+
+
+────────────────────────────────────────────
+📂 src/Entity
+└── 📄 .gitignore
+────────────────────────────────────────────
+
+
+
+────────────────────────────────────────────
+📂 src/Entity
+└── 📄 Post.php
+────────────────────────────────────────────
+<?php
+
+namespace App\Entity;
+
+use App\Repository\PostRepository;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity(repositoryClass: PostRepository::class)]
+#[ORM\HasLifecycleCallbacks] // Permet à Doctrine d'appeler les méthodes avec annotations PrePersist, PreUpdate etc.
+class Post
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $title = null;
+
+    #[ORM\Column(type: Types::TEXT)]
+    private ?string $content = null;
+
+    // Correction : on précise ici le type de colonne pour Doctrine :
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private ?\DateTimeImmutable $created = null;
+
+    // Ajout - callback appelé automatiquement avant insertion
+    #[ORM\PrePersist]
+    public function setCreatedValue(): void
+    {
+        // Initialisation automatique à la date du jour à la création de l'objet
+        $this->created = new \DateTimeImmutable();
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(string $title): static
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    public function getContent(): ?string
+    {
+        return $this->content;
+    }
+
+    public function setContent(string $content): static
+    {
+        $this->content = $content;
+        return $this;
+    }
+
+    public function getCreated(): ?\DateTimeImmutable
+    {
+        return $this->created;
+    }
+}
+
+
+
+────────────────────────────────────────────
+📂 src
+└── 📄 Kernel.php
+────────────────────────────────────────────
+<?php
+
+namespace App;
+
+use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+
+class Kernel extends BaseKernel
+{
+    use MicroKernelTrait;
+}
+
+
+
+────────────────────────────────────────────
+📂 src/Repository
+└── 📄 .gitignore
+────────────────────────────────────────────
+
+
+
+────────────────────────────────────────────
+📂 src/Repository
+└── 📄 PostRepository.php
+────────────────────────────────────────────
+<?php
+
+namespace App\Repository;
+
+use App\Entity\Post;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
+
+/**
+ * @extends ServiceEntityRepository<Post>
+ */
+class PostRepository extends ServiceEntityRepository
+{
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, Post::class);
+    }
+
+    //    /**
+    //     * @return Post[] Returns an array of Post objects
+    //     */
+    //    public function findByExampleField($value): array
+    //    {
+    //        return $this->createQueryBuilder('p')
+    //            ->andWhere('p.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->orderBy('p.id', 'ASC')
+    //            ->setMaxResults(10)
+    //            ->getQuery()
+    //            ->getResult()
+    //        ;
+    //    }
+
+    //    public function findOneBySomeField($value): ?Post
+    //    {
+    //        return $this->createQueryBuilder('p')
+    //            ->andWhere('p.exampleField = :val')
+    //            ->setParameter('val', $value)
+    //            ->getQuery()
+    //            ->getOneOrNullResult()
+    //        ;
+    //    }
+}
+
+
+
+────────────────────────────────────────────
+📂 config/packages
+└── 📄 security.yaml
+────────────────────────────────────────────
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:
+        users_in_memory: { memory: null }
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            lazy: true
+            provider: users_in_memory
+
+            # activate different ways to authenticate
+            # https://symfony.com/doc/current/security.html#the-firewall
+
+            # https://symfony.com/doc/current/security/impersonating_user.html
+            # switch_user: true
+
+    # Easy way to control access for large sections of your site
+    # Note: Only the *first* access control that matches will be used
+    access_control:
+        # - { path: ^/admin, roles: ROLE_ADMIN }
+        # - { path: ^/profile, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            # By default, password hashers are resource intensive and take time. This is
+            # important to generate secure password hashes. In tests however, secure hashes
+            # are not important, waste resources and increase test times. The following
+            # reduces the work factor to the lowest possible values.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon
+
+
+
+────────────────────────────────────────────
+📂 config
+└── 📄 routes.yaml
+────────────────────────────────────────────
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+
+
+────────────────────────────────────────────
+📂 config/packages
+└── 📄 framework.yaml
+────────────────────────────────────────────
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Note that the session will be started ONLY if you read or write from it.
+    session: true
+
+    #esi: true
+    #fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file
+
+
+
+────────────────────────────────────────────
+📂 config
+└── 📄 services.yaml
+────────────────────────────────────────────
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+
