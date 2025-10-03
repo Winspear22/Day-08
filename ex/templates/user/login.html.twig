@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ex01{% endblock %}
+
+{% block body %}
+    {% if app.user %}
+        <h2>Bienvenue {{ app.user.username }}</h2>
+        <p>Tu es déjà connecté, veux-tu rejoindre l'index ? :</p>
+        <a href="{{ path('index') }}">Oui</a>
+    {% else %}
+    <h2>Connexion</h2>
+    <p>Coucou, tu n'es pas encore connecté, pour te connecté tu dois remplir ce formulaire. Tu es déjà censé avoir le username et le mot de passe.</p>
+    <form id="login-form" method="POST" action="/login">
+        <input type="text" name="username" placeholder="Nom d'utilisateur">
+        <input type="password" name="password" placeholder="Mot de passe">
+        <button type="submit">Connexion</button>
+    </form>
+
+    {% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+    <script src="/js/login.js"></script>
+{% endblock %}

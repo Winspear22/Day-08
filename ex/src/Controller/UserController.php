@@ -16,7 +16,7 @@ final class UserController extends AbstractController
     #[Route('/login', name: 'login_page', methods: ['GET'])]
     public function loginPage(): Response
     {
-        return $this->render('user/index.html.twig');
+        return $this->render('user/login.html.twig');
     }
 
     // Traitement du login (POST AJAX)
@@ -31,7 +31,10 @@ final class UserController extends AbstractController
         if ($loginService->authenticate($username, $password) === true)
         {
             // Crée la session, etc.
-            return new JsonResponse(['success' => true]);
+            $user = $this->getUser(); // retourne l'utilisateur connecté ou null
+            $isConnected = $this->isGranted('ROLE_USER'); // retourne vrai si user loggé            
+            return new JsonResponse(['success' => true
+            , 'user' => $user, 'isConnected' => $isConnected]);
         }
         return new JsonResponse(['error' => 'Erreur, le login est incorrecte.'], 401);
     }
