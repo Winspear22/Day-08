@@ -7,7 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
-#[ORM\HasLifecycleCallbacks] // Permet à Doctrine d'appeler les méthodes avec annotations PrePersist, PreUpdate etc.
+#[ORM\HasLifecycleCallbacks] // <-- Ajouté pour activer les events Doctrine
 class Post
 {
     #[ORM\Id]
@@ -15,23 +15,14 @@ class Post
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 60)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private ?string $content = null;
 
-    // Correction : on précise ici le type de colonne pour Doctrine :
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column]
     private ?\DateTimeImmutable $created = null;
-
-    // Ajout - callback appelé automatiquement avant insertion
-    #[ORM\PrePersist]
-    public function setCreatedValue(): void
-    {
-        // Initialisation automatique à la date du jour à la création de l'objet
-        $this->created = new \DateTimeImmutable();
-    }
 
     public function getId(): ?int
     {
@@ -64,4 +55,20 @@ class Post
     {
         return $this->created;
     }
+
+    public function setCreated(\DateTimeImmutable $created): static
+    {
+        $this->created = $created;
+        return $this;
+    }
+
+    // --------- AJOUT pour l'event Doctrine :
+    #[ORM\PrePersist]
+    public function setCreatedAtValue(): void
+    {
+        if ($this->created === null) {
+            $this->created = new \DateTimeImmutable();
+        }
+    }
+    // ---------
 }

@@ -13,7 +13,6 @@
         {% endblock %}
 
         {% block javascripts %}
-            <script src="/login.js"></script>
         {% endblock %}
     </head>
     <body>
@@ -21,60 +20,4 @@
     </body>
 </html>
 
-
-
-────────────────────────────────────────────
-📂 templates/post
-└── 📄 index.html.twig
-────────────────────────────────────────────
-{% extends 'base.html.twig' %}
-
-{% block title %}Hello PostController!{% endblock %}
-
-{% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
-
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>/home/adnen/Desktop/Day-08/ex/src/Controller/PostController.php</code></li>
-        <li>Your template at <code>/home/adnen/Desktop/Day-08/ex/templates/post/index.html.twig</code></li>
-    </ul>
-</div>
-{% endblock %}
-
-
-
-────────────────────────────────────────────
-📂 templates/user
-└── 📄 login.html.twig
-────────────────────────────────────────────
-{% extends 'base.html.twig' %}
-
-{% block title %}Ex01{% endblock %}
-
-{% block body %}
-    {% if app.user %}
-        <h2>Bienvenue {{ app.user.username }}</h2>
-    {% else %}
-    <h2>Connexion</h2>
-    <p>Coucou, tu n'es pas encore connecté, pour te connecté tu dois remplir ce formulaire. Tu es déjà censé avoir le username et le mot de passe.</p>
-    <form id="login-form" method="POST" action="/login">
-        <input type="text" name="username" placeholder="Nom d'utilisateur">
-        <input type="password" name="password" placeholder="Mot de passe">
-        <button type="submit">Connexion</button>
-    </form>
-
-    {% endif %}
-
-{% endblock %}
-
-{% block javascripts %}
-    <script src="/js/login.js"></script>
-{% endblock %}
 

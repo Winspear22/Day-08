@@ -7,78 +7,6 @@
 
 
 ────────────────────────────────────────────
-📂 src/Controller
-└── 📄 PostController.php
-────────────────────────────────────────────
-<?php
-
-namespace App\Controller;
-
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-
-final class PostController extends AbstractController
-{
-    #[Route('/post', name: 'app_post')]
-    public function index(): Response
-    {
-        return $this->render('post/index.html.twig', [
-            'controller_name' => 'PostController',
-        ]);
-    }
-}
-
-
-
-────────────────────────────────────────────
-📂 src/Controller
-└── 📄 UserController.php
-────────────────────────────────────────────
-<?php
-
-namespace App\Controller;
-
-use App\Service\loginService;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
-final class UserController extends AbstractController
-{
-
-    // Affichage du formulaire login (GET)
-    #[Route('/login', name: 'login_page', methods: ['GET'])]
-    public function loginPage(): Response
-    {
-        return $this->render('user/login.html.twig');
-    }
-
-    // Traitement du login (POST AJAX)
-
-
-    #[Route('/login', name: 'login_action', methods: ['POST'])]
-    public function loginAction(Request $request, loginService $loginService): Response
-    {
-        $username = $request->request->get('username');
-        $password = $request->request->get('password');
-
-        if ($loginService->authenticate($username, $password) === true)
-        {
-            // Crée la session, etc.
-            $user = $this->getUser(); // retourne l'utilisateur connecté ou null
-            $isConnected = $this->isGranted('ROLE_USER'); // retourne vrai si user loggé            
-            return new JsonResponse(['success' => true
-            , 'user' => $user, 'isConnected' => $isConnected]);
-        }
-        return new JsonResponse(['error' => 'Erreur, le login est incorrecte.'], 401);
-    }
-}
-
-
-────────────────────────────────────────────
 📂 src/Entity
 └── 📄 .gitignore
 ────────────────────────────────────────────
@@ -98,7 +26,6 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PostRepository::class)]
-#[ORM\HasLifecycleCallbacks] // Permet à Doctrine d'appeler les méthodes avec annotations PrePersist, PreUpdate etc.
 class Post
 {
     #[ORM\Id]
@@ -106,23 +33,14 @@ class Post
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 60)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private ?string $content = null;
 
-    // Correction : on précise ici le type de colonne pour Doctrine :
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[ORM\Column]
     private ?\DateTimeImmutable $created = null;
-
-    // Ajout - callback appelé automatiquement avant insertion
-    #[ORM\PrePersist]
-    public function setCreatedValue(): void
-    {
-        // Initialisation automatique à la date du jour à la création de l'objet
-        $this->created = new \DateTimeImmutable();
-    }
 
     public function getId(): ?int
     {
@@ -137,6 +55,7 @@ class Post
     public function setTitle(string $title): static
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -148,12 +67,20 @@ class Post
     public function setContent(string $content): static
     {
         $this->content = $content;
+
         return $this;
     }
 
     public function getCreated(): ?\DateTimeImmutable
     {
         return $this->created;
+    }
+
+    public function setCreated(\DateTimeImmutable $created): static
+    {
+        $this->created = $created;
+
+        return $this;
     }
 }
 
@@ -235,42 +162,16 @@ class PostRepository extends ServiceEntityRepository
 
 
 ────────────────────────────────────────────
-📂 src/Service
-└── 📄 loginService.php
-────────────────────────────────────────────
-<?php 
-
-// src/Service/UserAuthenticator.php
-namespace App\Service;
-
-class loginService
-{
-    public function authenticate($username, $password): bool
-    {
-		if (empty($username) || empty($password))
-            return false;
-		if ($username == "testuser" && $password == "user42")
-			return true;
-		return false;
-    }
-}
-?>
-
-
-────────────────────────────────────────────
 📂 config/packages
 └── 📄 security.yaml
 ────────────────────────────────────────────
 security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
-        users_in_memory:
-            memory:
-                users:
-                    testuser:
-                        password: '$2y$13$c3df/oQIbossonopF0tf7eC4qLk/JBdmqAMS1kPxSSe1umTYHJQxi'  # Mets ici un hash réel ! vrai mdp : user42
-                        roles: ['ROLE_USER']
+        users_in_memory: { memory: null }
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -278,20 +179,31 @@ security:
         main:
             lazy: true
             provider: users_in_memory
-            # Ajoute ici un bloc d’auth (optionnel pour mémoire simple)
-            # http_basic: ~
+
+            # activate different ways to authenticate
+            # https://symfony.com/doc/current/security.html#the-firewall
+
+            # https://symfony.com/doc/current/security/impersonating_user.html
+            # switch_user: true
+
+    # Easy way to control access for large sections of your site
+    # Note: Only the *first* access control that matches will be used
     access_control:
-        - { path: ^/post, roles: ROLE_USER }
-        # Ajoute d’autres règles ici si besoin
+        # - { path: ^/admin, roles: ROLE_ADMIN }
+        # - { path: ^/profile, roles: ROLE_USER }
 
 when@test:
     security:
         password_hashers:
+            # By default, password hashers are resource intensive and take time. This is
+            # important to generate secure password hashes. In tests however, secure hashes
+            # are not important, waste resources and increase test times. The following
+            # reduces the work factor to the lowest possible values.
             Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
                 algorithm: auto
-                cost: 4
-                time_cost: 3
-                memory_cost: 10
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon
 
 
 
