@@ -53,6 +53,12 @@ if [ -d "templates" ]; then
   done < <(find templates -type f -print0 | sort -z)
 fi
 
+if [ -d "public/js" ]; then
+  while IFS= read -r -d '' f; do
+    append_file "$f" "$FRONT_OUT"
+  done < <(find public/js -type f -print0 | sort -z)
+fi
+
 # CSS
 append_file "public/.style.css" "$FRONT_OUT"
 append_file "public/style.css" "$FRONT_OUT"

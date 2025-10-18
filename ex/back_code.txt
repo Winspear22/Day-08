@@ -8,6 +8,46 @@
 
 ────────────────────────────────────────────
 📂 src/Controller
+└── 📄 PostController.php
+────────────────────────────────────────────
+<?php
+
+namespace App\Controller;
+
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+
+
+//#[IsGranted(attribute: 'ROLE_USER')]
+final class PostController extends AbstractController
+{
+    #[Route('/index', name: 'index')]
+    public function defaultAction(): Response
+    {
+        return $this->render('post/index.html.twig', [
+            'controller_name' => 'PostController',
+        ]);
+    }
+
+    #[Route('/quote', name: 'ajax_quote', methods: ['GET'])]
+    public function quote(): JsonResponse
+    {
+        $quotes = [
+            'La vie est belle.',
+            'Carpe diem.',
+            'Le savoir est une arme.'
+        ];
+        return new JsonResponse(['quote' => $quotes[array_rand($quotes)]]);
+    }
+}
+
+
+
+────────────────────────────────────────────
+📂 src/Controller
 └── 📄 UserController.php
 ────────────────────────────────────────────
 <?php
@@ -22,7 +62,7 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 class UserController extends AbstractController
 {
     #[Route(path: '/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils): Response
+    public function loginAction(AuthenticationUtils $authenticationUtils): Response
     {
         // if ($this->getUser()) {
         //     return $this->redirectToRoute('target_path');
@@ -37,9 +77,76 @@ class UserController extends AbstractController
     }
 
     #[Route(path: '/logout', name: 'app_logout')]
-    public function logout(): void
+    public function logoutAction(): void
     {
         throw new \LogicException('This method can be blank - it will be intercepted by the logout key on your firewall.');
+    }
+}
+
+
+
+────────────────────────────────────────────
+📂 src/DataFixtures
+└── 📄 AppFixtures.php
+────────────────────────────────────────────
+<?php
+
+namespace App\DataFixtures;
+
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Persistence\ObjectManager;
+
+class AppFixtures extends Fixture
+{
+    public function load(ObjectManager $manager): void
+    {
+        // $product = new Product();
+        // $manager->persist($product);
+
+        $manager->flush();
+    }
+}
+
+
+
+────────────────────────────────────────────
+📂 src/DataFixtures
+└── 📄 UserFixtures.php
+────────────────────────────────────────────
+<?php
+
+namespace App\DataFixtures;
+
+use App\Entity\User;
+use Doctrine\Persistence\ObjectManager;
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+
+class UserFixtures extends Fixture implements FixtureGroupInterface
+{
+    public function __construct(private UserPasswordHasherInterface $passwordHasher)    {}
+    public static function getGroups(): array
+    {
+        return ['users'];
+    }
+
+    public function load(ObjectManager $manager): void
+    {
+        // $product = new Product();
+        // $manager->persist($product);
+        $i = 0;
+        while ($i < 10)
+        {
+            $user = new User();
+            $user->setUsername('user' . $i);
+            $hashed = $this->passwordHasher->hashPassword($user, 'password' . $i);
+            $user->setPassword($hashed);
+            $user->setRoles(['ROLE_USER']);
+            $manager->persist($user);
+            $i++;
+        }
+        $manager->flush();
     }
 }
 
